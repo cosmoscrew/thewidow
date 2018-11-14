@@ -1,4 +1,4 @@
-package blindxss
+package core
 
 import (
 	"log"
@@ -12,8 +12,10 @@ import (
 func TestServer(t *testing.T) {
 	m := &http.ServeMux{}
 	s := https.NewHTTPServer(m, 5, 120)
-	o := outputs.New()
-	o.SlackWebhook = ""
+
+	SlackWebhook := ""
+
+	o := outputs.New(SlackWebhook, "", "")
 	s.Addr = ":8082"
 	_ = New(m, "http://localhost:8082/m", o)
 	log.Fatal(s.ListenAndServe())

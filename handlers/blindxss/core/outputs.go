@@ -1,4 +1,4 @@
-package blindxss
+package core
 
 import (
 	"fmt"
@@ -34,12 +34,6 @@ func NewReport(Values map[string]string) XSSReport {
 func (x XSSReport) String() string {
 	return fmt.Sprintf("Blind XSS Attempt Recieved\nURL: `%s`\tIP: `%s`\nCookies: `%s`\nInnerHTML: \n```\n%s\n```\nOpenerCookie: `%s`\nOpenerURL: `%s`\nOpenerHTML: `%s`\n",
 		x.URL, x.IP, x.Cookie, x.InnerHTML, x.OpenerCookie, x.OpenerURL, x.OpenerHTML)
-}
-
-// Slack converts the XSS Report to a slack acceptable textual representation
-func (x XSSReport) Slack() string {
-	return fmt.Sprintf("Blind XSS Attempt Recieved\nURL: `%s`\tIP: `%s`\nCookies: `%s`\n```\nOpenerCookie: `%s`\nOpenerURL: `%s`\n",
-		x.URL, x.IP, x.Cookie, x.OpenerCookie, x.OpenerURL)
 }
 
 // Print prints a xss report
