@@ -145,7 +145,12 @@ func (x xssReport) string() string {
 		message = message + fmt.Sprintf("LocalStorage: \n```\n%s\n```\n", x.LocalStorage)
 	}
 	if x.JSUrls != "" && x.JSUrls != "null" {
-		message = message + fmt.Sprintf("JSUrls: \n```\n%s\n```\n", x.JSUrls)
+		urls := strings.Split(x.JSUrls, ",")
+		message = message + fmt.Sprintf("JSUrls: \n```\n")
+		for _, url := range urls {
+			message = message + fmt.Sprintf("%s\n", url)
+		}
+		message = message + fmt.Sprintf("```\n")
 	}
 	if x.Referrer != "" && x.Referrer != "null" {
 		message = message + fmt.Sprintf("Referrer: `%s`\n", x.Referrer)
